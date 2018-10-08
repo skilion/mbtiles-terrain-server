@@ -95,7 +95,7 @@ export class CommandLineInterface {
   ];
 }
 
-const options: ICommandOptions = commandLineArgs(CommandLineInterface.optionDefinitions);
+const options = commandLineArgs(CommandLineInterface.optionDefinitions) as ICommandOptions;
 if (!options.src || options.help) {
   console.log('\nSupplied options: ');
   console.log(options);
