@@ -10,7 +10,7 @@ import { Response } from 'express-serve-static-core';
 export class TilesServer {
   constructor(private options: ICommandOptions) {
     const db = new Database(options.src, (err) => {
-      this.startServer(db, options);
+      db.run('PRAGMA cache_size=1500000', () => this.startServer(db, options));
     });
   }
 
