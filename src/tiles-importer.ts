@@ -46,7 +46,7 @@ export class TilesImporter {
               db.run('INSERT INTO tiles(zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?)', z, x, y, data, () => {
                 processedFiles++;
                 myPool.release(db);
-                if (processedFiles >= unprocessedFiles) { ready(); }
+                if (processedFiles % 10000 === 0) ready();
                 resolve();
               });
             });
