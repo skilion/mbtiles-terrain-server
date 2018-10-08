@@ -35,7 +35,7 @@ export class TilesImporter {
 
       const ready = () => {
         this.log.info('Finished processing all files...');
-        this.log.info(`Unprocessed ${unprocessedFiles}, allready processed ${processedFiles} files.`);
+        this.log.info(`Unprocessed ${unprocessedFiles}, already processed ${processedFiles} files.`);
       };
 
       const processFile = async (f: string) => {
@@ -65,7 +65,7 @@ export class TilesImporter {
       this.log.info(`Reading all files in ${this.options.input}...`);
       console.time('Processing');
       walkTalk(this.options.input, 100, regex, processFile, (err, count) => {
-        this.log.info(`Found ${count} files, allready processed ${processedFiles} files.`);
+        this.log.info(`Found ${count} files, already processed ${processedFiles} files.`);
         myPool.release(db);
         console.timeEnd('Processing');
       });
