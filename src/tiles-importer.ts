@@ -24,47 +24,51 @@ export class TilesImporter {
     const mbtiles = await this.initDatabase(this.options.src);
     const isTms = this.options.format === 'tms';
 
-    const ready = () => {
-      this.log.info('Finished processing all files...');
-      this.log.info(`Unprocessed ${unprocessedFiles}, allready processed ${processedFiles} files.`);
-    };
 
     const myPool = createPool(mbtiles, sqlite3.OPEN_READWRITE, true);
 
-    let unprocessedFiles = 0;
-    let processedFiles = 0;
-    const processFile = async (f: string) => {
-      return new Promise((resolve, reject) => {
-        unprocessedFiles++;
-        const m = regex.exec(f);
-        const z = +m[1];
-        const x = +m[2];
-        const y = isTms ? +m[3] : tms2slippy(z, +m[3]);
-        fs.readFile(f, (err, data) => {
-          if (!err) {
-            myPool.acquire().then(db => {
-              db.run('INSERT INTO tiles(zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?)', z, x, y, data, () => {
+    myPool.acquire().then(db => {
+      const stmt = db.prepare('INSERT INTO tiles(zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?)');
+
+      let unprocessedFiles = 0;
+      let processedFiles = 0;
+
+      const ready = () => {
+        this.log.info('Finished processing all files...');
+        this.log.info(`Unprocessed ${unprocessedFiles}, allready processed ${processedFiles} files.`);
+      };
+
+      const processFile = async (f: string) => {
+        return new Promise((resolve, reject) => {
+          unprocessedFiles++;
+          const m = regex.exec(f);
+          const z = +m[1];
+          const x = +m[2];
+          const y = isTms ? +m[3] : tms2slippy(z, +m[3]);
+          fs.readFile(f, (err, data) => {
+            if (!err) {
+              stmt.run(z, x, y, data, () => {
                 processedFiles++;
-                myPool.release(db);
                 if (processedFiles % 10000 === 0) ready();
                 resolve();
               });
-            });
-          } else {
-            processedFiles++;
-            resolve();
-          }
+            } else {
+              processedFiles++;
+              resolve();
+            }
+          });
         });
-      });
-    };
+      };
 
-    // const myPool = createPool(mbtiles, sqlite3.OPEN_READWRITE);
-    // this.walkTalk(this.options.input, myPool, () => this.log.info('DONE'));
-    this.log.info(`Reading all files in ${this.options.input}...`);
-    console.time('Processing');
-    walkTalk(this.options.input, 100, regex, processFile, (err, count) => {
-      this.log.info(`Found ${count} files, allready processed ${processedFiles} files.`);
-      console.timeEnd('Processing');
+      // const myPool = createPool(mbtiles, sqlite3.OPEN_READWRITE);
+      // this.walkTalk(this.options.input, myPool, () => this.log.info('DONE'));
+      this.log.info(`Reading all files in ${this.options.input}...`);
+      console.time('Processing');
+      walkTalk(this.options.input, 100, regex, processFile, (err, count) => {
+        this.log.info(`Found ${count} files, allready processed ${processedFiles} files.`);
+        myPool.release(db);
+        console.timeEnd('Processing');
+      });
     });
   }
 
