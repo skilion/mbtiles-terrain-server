@@ -12,7 +12,10 @@ export const createPool = (filename: string, mode: number, synchronous = false) 
         if (err) { throw new Error(err.message); }
         // https://www.sqlite.org/pragma.html#pragma_synchronous
         // With synchronous OFF (0), commits can be orders of magnitude faster with synchronous OFF.
-        client.run('PRAGMA synchronous=OFF', () => resolve(client));
+        client.run('PRAGMA synchronous=OFF', () =>
+          // https://sqlite.org/pragma.html#pragma_journal_mode
+          client.run('PRAGMA journal_mode=OFF', () => resolve(client))
+        );
       });
     }),
     destroy: (client: Database) => new Promise<undefined>((resolve) => {
