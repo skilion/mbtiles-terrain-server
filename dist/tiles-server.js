@@ -10,7 +10,7 @@ var TilesServer = (function () {
         var _this = this;
         this.options = options;
         var db = new sqlite3_1.Database(options.src, function (err) {
-            _this.startServer(db, options);
+            db.run('PRAGMA cache_size=1500000', function () { return _this.startServer(db, options); });
         });
     }
     TilesServer.prototype.startServer = function (db, options) {

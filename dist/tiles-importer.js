@@ -14,8 +14,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -51,8 +51,8 @@ var TilesImporter = (function () {
     }
     TilesImporter.prototype.process = function () {
         return __awaiter(this, void 0, void 0, function () {
+            var regex, mbtiles, isTms, myPool;
             var _this = this;
-            var regex, mbtiles, isTms, ready, myPool, unprocessedFiles, processedFiles, processFile;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -61,47 +61,47 @@ var TilesImporter = (function () {
                     case 1:
                         mbtiles = _a.sent();
                         isTms = this.options.format === 'tms';
-                        ready = function () {
-                            _this.log.info('Finished processing all files...');
-                            _this.log.info("Unprocessed " + unprocessedFiles + ", allready processed " + processedFiles + " files.");
-                        };
                         myPool = poolboy_1.createPool(mbtiles, sqlite3.OPEN_READWRITE, true);
-                        unprocessedFiles = 0;
-                        processedFiles = 0;
-                        processFile = function (f) { return __awaiter(_this, void 0, void 0, function () {
-                            return __generator(this, function (_a) {
-                                return [2, new Promise(function (resolve, reject) {
-                                        unprocessedFiles++;
-                                        var m = regex.exec(f);
-                                        var z = +m[1];
-                                        var x = +m[2];
-                                        var y = isTms ? +m[3] : utils_1.tms2slippy(z, +m[3]);
-                                        fs.readFile(f, function (err, data) {
-                                            if (!err) {
-                                                myPool.acquire().then(function (db) {
-                                                    db.run('INSERT INTO tiles(zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?)', z, x, y, data, function () {
+                        myPool.acquire().then(function (db) {
+                            var stmt = db.prepare('INSERT INTO tiles(zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?)');
+                            var unprocessedFiles = 0;
+                            var processedFiles = 0;
+                            var ready = function () {
+                                _this.log.info('Finished processing all files...');
+                                _this.log.info("Unprocessed " + unprocessedFiles + ", already processed " + processedFiles + " files.");
+                            };
+                            var processFile = function (f) { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    return [2, new Promise(function (resolve, reject) {
+                                            unprocessedFiles++;
+                                            var m = regex.exec(f);
+                                            var z = +m[1];
+                                            var x = +m[2];
+                                            var y = isTms ? +m[3] : utils_1.tms2slippy(z, +m[3]);
+                                            fs.readFile(f, function (err, data) {
+                                                if (!err) {
+                                                    stmt.run(z, x, y, data, function () {
                                                         processedFiles++;
-                                                        myPool.release(db);
-                                                        if (processedFiles >= unprocessedFiles) {
+                                                        if (processedFiles % 10000 === 0)
                                                             ready();
-                                                        }
                                                         resolve();
                                                     });
-                                                });
-                                            }
-                                            else {
-                                                processedFiles++;
-                                                resolve();
-                                            }
-                                        });
-                                    })];
+                                                }
+                                                else {
+                                                    processedFiles++;
+                                                    resolve();
+                                                }
+                                            });
+                                        })];
+                                });
+                            }); };
+                            _this.log.info("Reading all files in " + _this.options.input + "...");
+                            console.time('Processing');
+                            utils_1.walkTalk(_this.options.input, 100, regex, processFile, function (err, count) {
+                                _this.log.info("Found " + count + " files, already processed " + processedFiles + " files.");
+                                myPool.release(db);
+                                console.timeEnd('Processing');
                             });
-                        }); };
-                        this.log.info("Reading all files in " + this.options.input + "...");
-                        console.time('Processing');
-                        utils_1.walkTalk(this.options.input, 100, regex, processFile, function (err, count) {
-                            _this.log.info("Found " + count + " files, allready processed " + processedFiles + " files.");
-                            console.timeEnd('Processing');
                         });
                         return [2];
                 }
@@ -110,8 +110,8 @@ var TilesImporter = (function () {
     };
     TilesImporter.prototype.importFiles2 = function (db, files, regex) {
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
             var isTms, validFiles, filesToBeProcessed, bar, stmt;
+            var _this = this;
             return __generator(this, function (_a) {
                 this.log.info("Extracting zoom, x and y...");
                 isTms = this.options.format === 'tms';

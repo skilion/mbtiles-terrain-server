@@ -10,7 +10,9 @@ exports.createPool = function (filename, mode, synchronous) {
                 if (err) {
                     throw new Error(err.message);
                 }
-                client.run('PRAGMA synchronous=OFF', function () { return resolve(client); });
+                client.run('PRAGMA synchronous=OFF', function () {
+                    return client.run('PRAGMA journal_mode=OFF', function () { return resolve(client); });
+                });
             });
         }); },
         destroy: function (client) { return new Promise(function (resolve) {
