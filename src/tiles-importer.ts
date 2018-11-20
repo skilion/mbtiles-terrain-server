@@ -34,8 +34,7 @@ export class TilesImporter {
       let processedFiles = 0;
 
       const ready = () => {
-        this.log.info('Finished processing all files...');
-        this.log.info(`Unprocessed ${unprocessedFiles}, already processed ${processedFiles} files.`);
+        this.log.info(`Processed ${processedFiles} files.`);
       };
 
       const processFile = async (f: string) => {
@@ -60,12 +59,10 @@ export class TilesImporter {
         });
       };
 
-      // const myPool = createPool(mbtiles, sqlite3.OPEN_READWRITE);
-      // this.walkTalk(this.options.input, myPool, () => this.log.info('DONE'));
       this.log.info(`Reading all files in ${this.options.input}...`);
       console.time('Processing');
-      walkTalk(this.options.input, 100, regex, processFile, (err, count) => {
-        this.log.info(`Found ${count} files, already processed ${processedFiles} files.`);
+      walkTalk(this.options.input, 1, regex, processFile, (err, count) => {
+        this.log.info(`Found ${processedFiles} files.`);
         myPool.release(db);
         console.timeEnd('Processing');
       });
@@ -141,9 +138,10 @@ export class TilesImporter {
           stmt.run('format', 'unknown');
           stmt.run('tms', this.options.format === 'tms');
           stmt.finalize();
-          db.run('CREATE TABLE tiles (zoom_level integer, tile_column integer, tile_row integer, tile_data blob)');
-          db.close();
-          resolve(mbtiles);
+          db.run('CREATE TABLE tiles (zoom_level integer, tile_column integer, tile_row integer, tile_data blob)', () => {
+		      db.close();
+		      resolve(mbtiles);
+          });
         });
       });
     });

@@ -67,8 +67,7 @@ var TilesImporter = (function () {
                             var unprocessedFiles = 0;
                             var processedFiles = 0;
                             var ready = function () {
-                                _this.log.info('Finished processing all files...');
-                                _this.log.info("Unprocessed " + unprocessedFiles + ", already processed " + processedFiles + " files.");
+                                _this.log.info("Processed " + processedFiles + " files.");
                             };
                             var processFile = function (f) { return __awaiter(_this, void 0, void 0, function () {
                                 return __generator(this, function (_a) {
@@ -97,8 +96,8 @@ var TilesImporter = (function () {
                             }); };
                             _this.log.info("Reading all files in " + _this.options.input + "...");
                             console.time('Processing');
-                            utils_1.walkTalk(_this.options.input, 100, regex, processFile, function (err, count) {
-                                _this.log.info("Found " + count + " files, already processed " + processedFiles + " files.");
+                            utils_1.walkTalk(_this.options.input, 1, regex, processFile, function (err, count) {
+                                _this.log.info("Found " + processedFiles + " files.");
                                 myPool.release(db);
                                 console.timeEnd('Processing');
                             });
@@ -186,9 +185,10 @@ var TilesImporter = (function () {
                                 stmt.run('format', 'unknown');
                                 stmt.run('tms', _this.options.format === 'tms');
                                 stmt.finalize();
-                                db.run('CREATE TABLE tiles (zoom_level integer, tile_column integer, tile_row integer, tile_data blob)');
-                                db.close();
-                                resolve(mbtiles);
+                                db.run('CREATE TABLE tiles (zoom_level integer, tile_column integer, tile_row integer, tile_data blob)', function () {
+                                    db.close();
+                                    resolve(mbtiles);
+                                });
                             });
                         });
                     })];
